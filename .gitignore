@@ -1,3 +1,23 @@
+# Dataset (6GB - too large for GitHub)
+data/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Virtual environment
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

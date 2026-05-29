@@ -280,7 +280,7 @@ Some images have complex backgrounds. The pipeline uses the full image as fallba
 
 ---
 
-## 🏫 Academic Context
+## Academic Context
 
 **Course:** EE7204 / EC7205 — Computer Vision and Image Processing  
 **Institution:** Department of Electrical and Information Engineering, Faculty of Engineering, University of Ruhuna  
