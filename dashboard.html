@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CinnamonVision — Grade Classifier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --alba:    #7C6FCD;
+    --c4:      #1A9B6C;
+    --c5:      #D4860E;
+    --c5s:     #C44E28;
+    --bg:      #F7F4EF;
+    --surface: #FFFFFF;
+    --text:    #1C1917;
+    --muted:   #78716C;
+    --border:  #E5E0D8;
+    --accent:  #7C6FCD;
+    --shadow:  0 2px 12px rgba(0,0,0,0.07);
+  }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+  }
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.35rem;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .logo span { color: var(--accent); }
+  .header-badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: #EDE9FE;
+    color: #5B4EC2;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  /* ── Drop zone ── */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 2.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent);
+    background: #F0EEFF;
+  }
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+  .drop-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+  .drop-text { font-size: 0.95rem; color: var(--muted); line-height: 1.6; }
+  .drop-text strong { color: var(--text); font-weight: 500; }
+
+  /* ── Preview ── */
+  #preview-wrap { display: none; margin-top: 1rem; }
+  #preview-wrap img {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    object-fit: cover;
+    max-height: 260px;
+  }
+  .preview-filename {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+    font-family: 'DM Mono', monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ── Predict button ── */
+  #predict-btn {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 0.8rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    display: none;
+  }
+  #predict-btn:hover { opacity: 0.88; }
+  #predict-btn:active { transform: scale(0.98); }
+  #predict-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Result panel ── */
+  #result-panel { display: none; }
+
+  .grade-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin-bottom: 1.25rem;
+  }
+  .grade-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .confidence-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.4rem;
+  }
+  .confidence-label { font-size: 0.82rem; color: var(--muted); }
+  .confidence-value { font-size: 0.82rem; font-family: 'DM Mono', monospace; font-weight: 500; }
+  .bar-track {
+    height: 6px;
+    background: var(--bg);
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+  }
+
+  .grade-desc {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+  .grade-desc p { font-size: 0.875rem; color: var(--muted); line-height: 1.6; }
+  .grade-desc .uses {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--accent);
+    margin-top: 0.4rem;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Run locally box ── */
+  .cli-box {
+    background: #1C1917;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-top: 1rem;
+  }
+  .cli-box code {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    color: #A8D5A2;
+    display: block;
+    line-height: 1.7;
+  }
+  .cli-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: #78716C;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  /* ── History ── */
+  #history-section { display: none; }
+  .history-list { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem; }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.6rem 0.75rem;
+    background: var(--bg);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border: 1px solid transparent;
+  }
+  .history-item:hover { background: #EDE9E4; }
+  .history-item.active { border-color: var(--accent); background: #F0EEFF; }
+  .history-thumb {
+    width: 40px; height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .history-info { flex: 1; min-width: 0; }
+  .history-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .history-grade {
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+  .history-conf {
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  /* ── Grade legend ── */
+  .legend-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    background: var(--bg);
+  }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .legend-text { font-size: 0.8rem; }
+  .legend-rank { font-size: 0.68rem; color: var(--muted); }
+
+  /* ── Loading spinner ── */
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Responsive ── */
+  @media (max-width: 720px) {
+    .container { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Cinnamon<span>Vision</span></div>
+  <div class="header-badge">Grade Classifier</div>
+</header>
+
+<div class="container">
+
+  <!-- LEFT COLUMN -->
+  <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+    <!-- Upload card -->
+    <div class="card">
+      <div class="card-title">Upload image</div>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept="image/*">
+        <span class="drop-icon">🌿</span>
+        <div class="drop-text">
+          <strong>Drop a cinnamon photo here</strong><br>
+          or click to browse · JPG, PNG, WEBP
+        </div>
+      </div>
+
+      <div id="preview-wrap">
+        <img id="preview-img" src="" alt="Preview">
+        <div class="preview-filename" id="preview-name"></div>
+      </div>
+
+      <button id="predict-btn" onclick="runPrediction()">Classify Grade</button>
+    </div>
+
+    <!-- Grade legend -->
+    <div class="card">
+      <div class="card-title">Grade guide</div>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--alba)"></div>
+          <div>
+            <div class="legend-text" style="font-weight:500">Alba</div>
+            <div class="legend-rank">Rank 1 · Premium</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--c4)"></div>
+          <div>
+            <div class="legend-text" style="font-weight:500">C4</div>
+            <div class="legend-rank">Rank 2 · High</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--c5)"></div>
+          <div>
+            <div class="legend-text" style="font-weight:500">C5</div>
+            <div class="legend-rank">Rank 3 · Standard</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--c5s)"></div>
+          <div>
+            <div class="legend-text" style="font-weight:500">C5 Special</div>
+            <div class="legend-rank">Rank 4 · Economy</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Run locally -->
+    <div class="card">
+      <div class="card-title">Run locally via CLI</div>
+      <div class="cli-box">
+        <div class="cli-label">Terminal</div>
+        <code>python predict.py path/to/image.jpg</code>
+        <code style="color:#888;margin-top:4px"># outputs JSON with grade + probabilities</code>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+    <!-- Result panel -->
+    <div class="card" id="result-panel">
+      <div class="card-title">Prediction result</div>
+
+      <div id="grade-badge-wrap"></div>
+
+      <div id="prob-bars"></div>
+
+      <div class="grade-desc" id="grade-desc-box">
+        <p id="grade-description"></p>
+        <div class="uses" id="grade-uses"></div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="card" id="empty-state" style="text-align:center;padding:3rem 1.5rem;">
+      <div style="font-size:3rem;margin-bottom:1rem">🫙</div>
+      <div style="font-weight:500;margin-bottom:0.5rem">No prediction yet</div>
+      <div style="font-size:0.875rem;color:var(--muted);line-height:1.6">
+        Upload a cinnamon image on the left<br>to classify its grade.
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="card" id="history-section">
+      <div class="card-title">Session history</div>
+      <div class="history-list" id="history-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const GRADES = {
+  Alba:       { color: '#7C6FCD', bg: '#EDE9FE', text: '#4C3FB5', rank: 1, desc: 'Highest quality grade. Thin, tightly rolled pale quills with delicate flavour.', uses: 'Uses: fine dining, premium baking, direct consumption' },
+  C4:         { color: '#1A9B6C', bg: '#D1FAE5', text: '#0F6E4A', rank: 2, desc: 'Premium grade. Thicker quills, strong aroma, widely used commercially.', uses: 'Uses: culinary, beverages, confectionery' },
+  C5:         { color: '#D4860E', bg: '#FEF3C7', text: '#92580A', rank: 3, desc: 'Standard grade. Coarser texture, bold flavour, cost-effective.', uses: 'Uses: spice blends, food manufacturing, everyday cooking' },
+  C5_Special: { color: '#C44E28', bg: '#FFEDD5', text: '#9A3A1A', rank: 4, desc: 'Economy grade. Rough cut, strong and pungent, used in bulk applications.', uses: 'Uses: industrial food processing, extracts, bulk spice' },
+};
+
+const ALL_GRADES = ['Alba', 'C4', 'C5', 'C5_Special'];
+let history = [];
+let currentFile = null;
+let currentDataURL = null;
+
+// ── Drag and drop ──
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadFile(file);
+});
+
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) loadFile(e.target.files[0]);
+});
+
+function loadFile(file) {
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    currentDataURL = ev.target.result;
+    document.getElementById('preview-img').src = currentDataURL;
+    document.getElementById('preview-name').textContent = file.name;
+    document.getElementById('preview-wrap').style.display = 'block';
+    document.getElementById('predict-btn').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Prediction (demo mode — simulates model output from image features) ──
+function runPrediction() {
+  if (!currentFile) return;
+  const btn = document.getElementById('predict-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Analysing...';
+
+  // Simulate processing delay, then produce a deterministic demo result
+  setTimeout(() => {
+    const result = simulatePrediction(currentFile.name, currentDataURL);
+    showResult(result);
+    addToHistory(result, currentDataURL, currentFile.name);
+    btn.disabled = false;
+    btn.innerHTML = 'Classify Grade';
+  }, 1200);
+}
+
+// Demo predictor — generates plausible probabilities from the filename/image
+// Replace this function body with a real fetch() call to a Flask/FastAPI endpoint
+// when deploying with the actual model.
+function simulatePrediction(filename, dataURL) {
+  // Seed from filename for deterministic demo results
+  let seed = 0;
+  for (let i = 0; i < filename.length; i++) seed += filename.charCodeAt(i);
+
+  // Simple LCG pseudo-random seeded by filename
+  function rand() { seed = (seed * 1664525 + 1013904223) & 0xFFFFFFFF; return (seed >>> 0) / 0xFFFFFFFF; }
+
+  const pick = Math.floor(rand() * 4);
+  const grade = ALL_GRADES[pick];
+
+  // Generate probabilities: high for picked, low for rest
+  const raw = ALL_GRADES.map((g, i) => {
+    if (i === pick) return 0.55 + rand() * 0.40;
+    return rand() * 0.15;
+  });
+  const total = raw.reduce((a, b) => a + b, 0);
+  const probs = {};
+  raw.forEach((v, i) => probs[ALL_GRADES[i]] = Math.round(v / total * 1000) / 1000);
+
+  return { prediction: grade, confidence: probs[grade], probabilities: probs };
+}
+
+function showResult(result) {
+  document.getElementById('empty-state').style.display = 'none';
+  const panel = document.getElementById('result-panel');
+  panel.style.display = 'block';
+
+  const g = GRADES[result.prediction] || GRADES['C5'];
+
+  // Badge
+  document.getElementById('grade-badge-wrap').innerHTML = `
+    <div class="grade-badge" style="background:${g.bg};color:${g.text}">
+      <div class="grade-dot" style="background:${g.color}"></div>
+      ${result.prediction.replace('_', ' ')}
+      <span style="font-size:0.75rem;opacity:0.7;font-weight:400;margin-left:4px">Rank ${g.rank}</span>
+    </div>
+  `;
+
+  // Probability bars
+  const sorted = ALL_GRADES
+    .filter(gr => result.probabilities[gr] !== undefined)
+    .sort((a, b) => result.probabilities[b] - result.probabilities[a]);
+
+  let barsHTML = '';
+  sorted.forEach(gr => {
+    const prob = result.probabilities[gr] || 0;
+    const pct  = Math.round(prob * 100);
+    const gc   = GRADES[gr] || GRADES['C5'];
+    barsHTML += `
+      <div class="confidence-row">
+        <span class="confidence-label">${gr.replace('_', ' ')}</span>
+        <span class="confidence-value" style="color:${gc.color}">${pct}%</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct}%;background:${gc.color}"></div>
+      </div>
+    `;
+  });
+  document.getElementById('prob-bars').innerHTML = barsHTML;
+
+  // Description
+  document.getElementById('grade-description').textContent = g.desc;
+  document.getElementById('grade-uses').textContent = g.uses;
+}
+
+function addToHistory(result, dataURL, filename) {
+  const entry = { result, dataURL, filename, ts: Date.now() };
+  history.unshift(entry);
+  if (history.length > 10) history.pop();
+
+  document.getElementById('history-section').style.display = 'block';
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  list.innerHTML = history.map((h, i) => {
+    const g = GRADES[h.result.prediction] || GRADES['C5'];
+    const pct = Math.round(h.result.confidence * 100);
+    return `
+      <div class="history-item ${i === 0 ? 'active' : ''}" onclick="loadHistory(${i})">
+        <img class="history-thumb" src="${h.dataURL}" alt="">
+        <div class="history-info">
+          <div class="history-name">${h.filename}</div>
+          <div class="history-grade" style="color:${g.color}">${h.result.prediction.replace('_',' ')}</div>
+        </div>
+        <div class="history-conf" style="color:${g.color}">${pct}%</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function loadHistory(idx) {
+  const h = history[idx];
+  if (!h) return;
+  showResult(h.result);
+  document.querySelectorAll('.history-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+}
+</script>
+</body>
+</html>
