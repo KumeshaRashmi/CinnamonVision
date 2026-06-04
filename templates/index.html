@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CinnamonVision — Quality Analysis Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0B1A0B; --surf:#111F11; --card:#162416; --card2:#1A2C1A;
+  --bdr:#243824; --bdr2:#2E4A2E;
+  --gold:#C9A84C; --gold2:#A8852A; --gold-glow:rgba(201,168,76,.18);
+  --green:#2E7D32; --green2:#388E3C; --green3:#4CAF50;
+  --text:#E8F5E9; --sub:#8FB88F; --muted:#5A7A5A;
+  --alba:#5B9BD5; --c4:#3A8A3A; --c5:#D4700A; --c5s:#C9A84C;
+  --r:16px; --r2:12px; --r3:8px;
+  --sh:0 4px 24px rgba(0,0,0,.5);
+  --sh2:0 2px 12px rgba(0,0,0,.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* grain */
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.5}
+
+/* ── HEADER ── */
+header{position:sticky;top:0;z-index:100;background:rgba(11,26,11,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--bdr);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:.7rem}
+.logo-mark{width:38px;height:38px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:10px;display:grid;place-items:center;font-size:1.3rem;flex-shrink:0;box-shadow:0 0 16px var(--gold-glow)}
+.logo-name{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:700;letter-spacing:-.01em}
+.logo-name span{color:var(--gold)}
+.logo-sub{font-size:.68rem;color:var(--muted);font-weight:400;letter-spacing:.06em;margin-top:-.1rem}
+.hdr-tag{font-size:.7rem;font-weight:500;color:var(--sub);background:var(--card);border:1px solid var(--bdr);padding:.35rem .85rem;border-radius:999px;letter-spacing:.05em}
+
+/* ── LAYOUT ── */
+main{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+
+/* ── HERO ── */
+.hero{text-align:center;margin-bottom:2.5rem}
+.hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(1.9rem,4vw,3rem);font-weight:700;line-height:1.1;margin-bottom:.6rem}
+.hero h1 em{font-style:normal;color:var(--gold)}
+.hero p{color:var(--sub);font-size:.95rem;font-weight:300;max-width:500px;margin:0 auto;line-height:1.75}
+
+/* ── UPLOAD ── */
+.uploader{background:var(--surf);border:2px dashed var(--bdr2);border-radius:var(--r);padding:2.8rem 2rem;text-align:center;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;margin-bottom:1.5rem}
+.uploader::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% -10%,var(--gold-glow) 0%,transparent 65%);pointer-events:none}
+.uploader:hover,.uploader.over{border-color:var(--gold);background:rgba(201,168,76,.04);transform:translateY(-2px);box-shadow:var(--sh)}
+.up-icon{font-size:3rem;margin-bottom:.8rem;display:block;animation:bob 3s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.uploader h3{font-size:1.1rem;font-weight:600;margin-bottom:.3rem}
+.uploader p{font-size:.82rem;color:var(--sub);margin-bottom:1.2rem}
+.btn-pick{background:var(--gold);color:var(--bg);border:none;border-radius:var(--r3);padding:.65rem 1.8rem;font-family:'Outfit',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.03em}
+.btn-pick:hover{background:#D4B355;box-shadow:0 6px 20px rgba(201,168,76,.35);transform:translateY(-1px)}
+#fi{display:none}
+
+/* ── ERROR ── */
+.err{display:none;background:rgba(200,50,50,.1);border:1px solid rgba(200,50,50,.3);border-radius:var(--r2);padding:.9rem 1.2rem;color:#FF8888;font-size:.85rem;margin-bottom:1rem}
+.err.on{display:block}
+
+/* ── LOADING ── */
+.loader{display:none;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:2rem;text-align:center;margin-bottom:1.5rem}
+.loader.on{display:block}
+.spin{width:44px;height:44px;border:2.5px solid var(--bdr2);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;margin:0 auto .9rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-msg{font-size:.85rem;color:var(--sub);margin-bottom:1rem}
+.steps{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap}
+.stp{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:.35rem;transition:color .3s}
+.stp.active{color:var(--gold)}
+.stp.done{color:var(--green3)}
+.stp-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* ── PREVIEW ROW ── */
+.preview-row{display:none;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.preview-row.on{display:grid}
+.img-box{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.img-box-hd{padding:.6rem 1rem;font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;border-bottom:1px solid var(--bdr)}
+.img-box img{width:100%;height:220px;object-fit:contain;background:#080F08;display:block}
+
+/* ── RESULTS ── */
+.results{display:none;gap:1rem}
+.results.on{display:grid}
+
+/* grade hero */
+.grade-hero{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:2.2rem 2rem;text-align:center;position:relative;overflow:hidden;grid-column:1/-1}
+.grade-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% -30%,var(--gc,#3A8A3A) 0%,transparent 55%);opacity:.18;pointer-events:none;transition:background .4s}
+.grade-hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--gc,#3A8A3A);transition:background .4s}
+.g-emoji{font-size:3.5rem;margin-bottom:.4rem;display:block}
+.g-lbl{font-size:.65rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--sub);margin-bottom:.25rem}
+.g-name{font-family:'Cormorant Garamond',serif;font-size:clamp(2.8rem,7vw,5rem);font-weight:700;line-height:1;margin-bottom:.4rem;transition:color .4s}
+.g-desc{font-size:.88rem;color:var(--sub);max-width:460px;margin:0 auto .9rem;line-height:1.7}
+.g-badges{display:flex;justify-content:center;gap:.6rem;flex-wrap:wrap}
+.badge{font-size:.72rem;font-weight:600;padding:.3rem .85rem;border-radius:999px;letter-spacing:.05em}
+.badge-gold{background:rgba(201,168,76,.15);border:1px solid var(--gold2);color:var(--gold)}
+.badge-green{background:rgba(58,138,58,.15);border:1px solid var(--green);color:var(--green3)}
+
+/* section card */
+.sec-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.sec-hd{padding:.85rem 1.1rem;display:flex;align-items:center;gap:.6rem;border-bottom:1px solid var(--bdr);background:var(--card2)}
+.sec-hd-icon{width:28px;height:28px;border-radius:var(--r3);display:grid;place-items:center;font-size:.9rem;flex-shrink:0}
+.sec-hd-text{font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--sub)}
+.sec-body{padding:1.1rem}
+
+/* confidence */
+.conf-item{margin-bottom:.85rem}
+.conf-item:last-child{margin-bottom:0}
+.conf-top{display:flex;justify-content:space-between;margin-bottom:.3rem}
+.conf-gname{font-size:.88rem;font-weight:600}
+.conf-pct{font-size:.82rem;color:var(--sub)}
+.conf-bar{height:5px;background:var(--surf);border-radius:999px;overflow:hidden}
+.conf-fill{height:100%;border-radius:999px;transition:width .9s cubic-bezier(.4,0,.2,1);width:0}
+
+/* feature panels */
+.feat-tabs{display:flex;gap:.4rem;padding:.7rem 1rem;background:var(--card2);border-bottom:1px solid var(--bdr)}
+.tab{font-size:.75rem;font-weight:600;padding:.35rem .8rem;border-radius:var(--r3);border:1px solid transparent;cursor:pointer;color:var(--sub);transition:all .2s;letter-spacing:.04em}
+.tab.active{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+.tab:hover:not(.active){border-color:var(--bdr2);color:var(--text)}
+.feat-panel{display:none;padding:1rem}
+.feat-panel.on{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.7rem}
+.feat-cell{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:.8rem 1rem}
+.feat-cell-lbl{font-size:.68rem;color:var(--muted);font-weight:500;margin-bottom:.25rem}
+.feat-cell-val{font-size:1.15rem;font-weight:600;color:var(--text)}
+.feat-cell-val span{font-size:.7rem;color:var(--sub);font-weight:400;margin-left:.2rem}
+.feat-cell-desc{font-size:.65rem;color:var(--muted);margin-top:.2rem;line-height:1.4}
+
+/* radar-like quality score */
+.quality-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;padding:1rem}
+.q-item{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:.9rem;text-align:center}
+.q-score{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;line-height:1}
+.q-lbl{font-size:.68rem;color:var(--muted);margin-top:.2rem;letter-spacing:.06em;text-transform:uppercase}
+.q-bar{height:4px;background:var(--bdr2);border-radius:999px;overflow:hidden;margin-top:.5rem}
+.q-fill{height:100%;border-radius:999px;transition:width 1s cubic-bezier(.4,0,.2,1);width:0}
+
+/* grade ref */
+.grade-ref-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;padding:1rem}
+.gref{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:.9rem;text-align:center;transition:all .25s}
+.gref.hl{transform:translateY(-3px);box-shadow:0 0 0 2px var(--gc,var(--gold)),var(--sh)}
+.gref-em{font-size:1.7rem;margin-bottom:.3rem}
+.gref-name{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:700;margin-bottom:.25rem}
+.gref-info{font-size:.7rem;color:var(--sub);line-height:1.55}
+.gref-price{font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-top:.4rem;color:var(--muted)}
+
+/* reset btn */
+.btn-reset{display:block;margin:1.2rem auto 0;background:transparent;border:1px solid var(--bdr);color:var(--muted);border-radius:var(--r3);padding:.55rem 1.4rem;font-family:'Outfit',sans-serif;font-size:.8rem;cursor:pointer;transition:all .2s}
+.btn-reset:hover{border-color:var(--gold);color:var(--gold)}
+
+footer{position:relative;z-index:1;text-align:center;padding:1.5rem;color:var(--muted);font-size:.72rem;border-top:1px solid var(--bdr)}
+
+@media(max-width:680px){
+  .preview-row{grid-template-columns:1fr}
+  .grade-ref-grid{grid-template-columns:repeat(2,1fr)}
+  .quality-row{grid-template-columns:repeat(3,1fr)}
+  main{padding:1.5rem 1rem 3rem}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">🌿</div>
+    <div>
+      <div class="logo-name">Cinnamon<span>Vision</span></div>
+      <div class="logo-sub">Automated Quality Grading System</div>
+    </div>
+  </div>
+  <div class="hdr-tag">EE7204 / EC7205 · Univ. of Ruhuna</div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Geometric · Color · Texture<br/><em>Analysis in seconds</em></h1>
+    <p>Upload a cinnamon quill image. Our pipeline extracts 33 features across geometry, HSV color, and GLCM+LBP texture — then classifies the grade instantly.</p>
+  </div>
+
+  <!-- Upload -->
+  <div class="uploader" id="upZone">
+    <span class="up-icon">🍂</span>
+    <h3>Drop your cinnamon quill image here</h3>
+    <p>Supports PNG &amp; JPG · Max 16MB</p>
+    <button class="btn-pick" onclick="document.getElementById('fi').click()">Choose Image</button>
+    <input type="file" id="fi" accept=".png,.jpg,.jpeg"/>
+  </div>
+  <div class="err" id="errBox"></div>
+
+  <!-- Image preview -->
+  <div class="preview-row" id="prevRow">
+    <div class="img-box">
+      <div class="img-box-hd">📷 Uploaded Image</div>
+      <img id="origImg" src="" alt="Original"/>
+    </div>
+    <div class="img-box">
+      <div class="img-box-hd">🔬 Segmentation &amp; Contour</div>
+      <img id="resImg" src="" alt="Segmented"/>
+    </div>
+  </div>
+
+  <!-- Loader -->
+  <div class="loader" id="loaderBox">
+    <div class="spin"></div>
+    <div class="load-msg">Running the CinnamonVision pipeline…</div>
+    <div class="steps">
+      <div class="stp active" id="s1"><div class="stp-dot"></div>Preprocessing</div>
+      <div class="stp" id="s2"><div class="stp-dot"></div>Segmentation</div>
+      <div class="stp" id="s3"><div class="stp-dot"></div>Geometric Analysis</div>
+      <div class="stp" id="s4"><div class="stp-dot"></div>Color Analysis</div>
+      <div class="stp" id="s5"><div class="stp-dot"></div>Texture Analysis</div>
+      <div class="stp" id="s6"><div class="stp-dot"></div>Classification</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="resultsBox">
+
+    <!-- Grade hero -->
+    <div class="grade-hero" id="gradeHero">
+      <span class="g-emoji" id="gEmoji"></span>
+      <div class="g-lbl">Detected Cinnamon Grade</div>
+      <div class="g-name" id="gName"></div>
+      <div class="g-desc" id="gDesc"></div>
+      <div class="g-badges">
+        <span class="badge badge-gold" id="gPrice"></span>
+        <span class="badge badge-green" id="gMarket"></span>
+        <span class="badge badge-gold">SVM Classifier · 88.7% Accuracy</span>
+      </div>
+    </div>
+
+    <!-- Confidence + Quality side by side -->
+    <div class="sec-card">
+      <div class="sec-hd">
+        <div class="sec-hd-icon" style="background:rgba(201,168,76,.15)">📊</div>
+        <div class="sec-hd-text">Grade Confidence Scores</div>
+      </div>
+      <div class="sec-body" id="confBody"></div>
+    </div>
+
+    <div class="sec-card">
+      <div class="sec-hd">
+        <div class="sec-hd-icon" style="background:rgba(58,138,58,.15)">🎯</div>
+        <div class="sec-hd-text">Quality Dimensions</div>
+      </div>
+      <div class="quality-row" id="qualRow"></div>
+    </div>
+
+    <!-- Feature Analysis — 3 tabs -->
+    <div class="sec-card" style="grid-column:1/-1">
+      <div class="sec-hd">
+        <div class="sec-hd-icon" style="background:rgba(91,155,213,.15)">🔢</div>
+        <div class="sec-hd-text">Extracted Feature Analysis</div>
+      </div>
+      <div class="feat-tabs">
+        <button class="tab active" onclick="showTab('geo',this)">📐 Geometric (7)</button>
+        <button class="tab" onclick="showTab('col',this)">🎨 Color HSV (6)</button>
+        <button class="tab" onclick="showTab('tex',this)">🔲 Texture GLCM+LBP (6)</button>
+      </div>
+      <div class="feat-panel on" id="tab-geo"></div>
+      <div class="feat-panel" id="tab-col"></div>
+      <div class="feat-panel" id="tab-tex"></div>
+    </div>
+
+    <!-- Grade reference -->
+    <div class="sec-card" style="grid-column:1/-1">
+      <div class="sec-hd">
+        <div class="sec-hd-icon" style="background:rgba(201,168,76,.15)">📋</div>
+        <div class="sec-hd-text">SLS 81:2021 Grade Reference</div>
+      </div>
+      <div class="grade-ref-grid" id="gradeRef">
+        <div class="gref" data-g="Alba">
+          <div class="gref-em">🥇</div>
+          <div class="gref-name" style="color:#5B9BD5">Alba</div>
+          <div class="gref-info">Diameter &lt;6mm<br/>45+ quills / kg<br/>Ultra-fine texture</div>
+          <div class="gref-price">Premium Export</div>
+        </div>
+        <div class="gref" data-g="C4">
+          <div class="gref-em">🥈</div>
+          <div class="gref-name" style="color:#3A8A3A">C4</div>
+          <div class="gref-info">Diameter 6–10mm<br/>Good surface<br/>Slight variations</div>
+          <div class="gref-price">Quality Export</div>
+        </div>
+        <div class="gref" data-g="C5">
+          <div class="gref-em">🥉</div>
+          <div class="gref-name" style="color:#D4700A">C5</div>
+          <div class="gref-info">Diameter 10–16mm<br/>Standard quality<br/>Bulk trade grade</div>
+          <div class="gref-price">Commercial</div>
+        </div>
+        <div class="gref" data-g="C5 Special">
+          <div class="gref-em">📦</div>
+          <div class="gref-name" style="color:#C9A84C">C5 Special</div>
+          <div class="gref-info">Diameter 16–22mm<br/>Mixed quality<br/>Domestic market</div>
+          <div class="gref-price">Standard</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-reset" onclick="resetAll()">↩ Analyze Another Image</button>
+  </div><!-- /results -->
+</main>
+
+<footer>
+  CinnamonVision · Automated Grading &amp; Quality Estimation using Geometric and Color Texture Analysis ·
+  EE7204/EC7205 · Department of Electrical and Information Engineering · University of Ruhuna · 2026
+</footer>
+
+<script>
+const GC = {Alba:'#5B9BD5',C4:'#3A8A3A',C5:'#D4700A','C5 Special':'#C9A84C'};
+
+/* drag/drop */
+const uz = document.getElementById('upZone');
+uz.addEventListener('dragover', e=>{e.preventDefault();uz.classList.add('over')});
+uz.addEventListener('dragleave',()=>uz.classList.remove('over'));
+uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('over');if(e.dataTransfer.files[0])go(e.dataTransfer.files[0])});
+uz.addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')document.getElementById('fi').click()});
+document.getElementById('fi').addEventListener('change',e=>{if(e.target.files[0])go(e.target.files[0])});
+
+let stpTimer;
+function go(file){
+  resetAll(false);
+  // preview original
+  const fr=new FileReader();
+  fr.onload=e=>{
+    document.getElementById('origImg').src=e.target.result;
+    document.getElementById('prevRow').classList.add('on');
+  };
+  fr.readAsDataURL(file);
+
+  document.getElementById('loaderBox').classList.add('on');
+  animSteps();
+
+  const fd=new FormData();
+  fd.append('file',file);
+  fetch('/predict',{method:'POST',body:fd})
+    .then(r=>r.json())
+    .then(d=>{
+      document.getElementById('loaderBox').classList.remove('on');
+      d.error ? showErr(d.error) : showResults(d);
+    })
+    .catch(()=>{
+      document.getElementById('loaderBox').classList.remove('on');
+      showErr('Connection error — make sure Flask server is running on port 5000.');
+    });
+}
+
+function animSteps(){
+  const ids=['s1','s2','s3','s4','s5','s6'];
+  let i=0;
+  stpTimer=setInterval(()=>{
+    if(i>0) document.getElementById(ids[i-1]).className='stp done';
+    if(i<ids.length){document.getElementById(ids[i]).className='stp active';i++;}
+    else clearInterval(stpTimer);
+  },500);
+}
+
+function showResults(d){
+  const gc=GC[d.grade]||'#C9A84C';
+  document.documentElement.style.setProperty('--gc',gc);
+
+  // Hero
+  document.getElementById('gEmoji').textContent=d.emoji;
+  document.getElementById('gName').textContent=d.grade;
+  document.getElementById('gName').style.color=gc;
+  document.getElementById('gDesc').textContent=d.description;
+  document.getElementById('gPrice').textContent='Market Value: '+d.price;
+  document.getElementById('gMarket').textContent=d.market;
+
+  // Segmentation image
+  if(d.result_image){
+    document.getElementById('resImg').src=d.result_image+'?t='+Date.now();
+  }
+
+  // Confidence
+  const cb=document.getElementById('confBody');
+  cb.innerHTML='';
+  Object.entries(d.confidence).sort((a,b)=>b[1]-a[1]).forEach(([g,pct])=>{
+    const c=GC[g]||'#888';
+    cb.innerHTML+=`<div class="conf-item">
+      <div class="conf-top"><span class="conf-gname">${g}</span><span class="conf-pct">${pct}%</span></div>
+      <div class="conf-bar"><div class="conf-fill" style="background:${c}" data-w="${pct}"></div></div>
+    </div>`;
+  });
+  setTimeout(()=>document.querySelectorAll('.conf-fill').forEach(el=>el.style.width=el.dataset.w+'%'),120);
+
+  // Quality dimensions (derive scores from features)
+  const geo=d.geometric, col=d.color_feats, tex=d.texture_feats;
+  // Normalize scores 0-100 for display (illustrative thresholds)
+  const geoScore = Math.min(100, Math.round(geo['Circularity'].value * 100));
+  const colScore  = Math.min(100, Math.round(Math.max(0, 1 - geo['Aspect Ratio'].value*0.3)*100));
+  const texScore  = Math.min(100, Math.round(tex['GLCM Homogeneity'].value * 100));
+  const qr=document.getElementById('qualRow');
+  [
+    {lbl:'Geometry',score:geoScore,col:'#5B9BD5',desc:'Shape & size'},
+    {lbl:'Color',   score:colScore, col:'#3A8A3A',desc:'HSV uniformity'},
+    {lbl:'Texture', score:texScore, col:'#D4700A',desc:'Surface smoothness'},
+  ].forEach(q=>{
+    qr.innerHTML+=`<div class="q-item">
+      <div class="q-score" style="color:${q.col}">${q.score}</div>
+      <div class="q-lbl">${q.lbl}</div>
+      <div style="font-size:.65rem;color:var(--muted);margin-top:.1rem">${q.desc}</div>
+      <div class="q-bar"><div class="q-fill" style="background:${q.col}" data-w="${q.score}"></div></div>
+    </div>`;
+  });
+  setTimeout(()=>document.querySelectorAll('.q-fill').forEach(el=>el.style.width=el.dataset.w+'%'),150);
+
+  // Feature panels
+  fillFeatPanel('tab-geo', d.geometric);
+  fillFeatPanel('tab-col', d.color_feats);
+  fillFeatPanel('tab-tex', d.texture_feats);
+
+  // Grade reference highlight
+  document.querySelectorAll('.gref').forEach(el=>{
+    el.classList.toggle('hl', el.dataset.g===d.grade);
+    if(el.dataset.g===d.grade) el.style.setProperty('--gc',gc);
+  });
+
+  document.getElementById('resultsBox').classList.add('on');
+  setTimeout(()=>document.getElementById('resultsBox').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+function fillFeatPanel(id, feats){
+  const el=document.getElementById(id);
+  el.innerHTML='';
+  Object.entries(feats).forEach(([k,v])=>{
+    el.innerHTML+=`<div class="feat-cell">
+      <div class="feat-cell-lbl">${k}</div>
+      <div class="feat-cell-val">${v.value}<span>${v.unit}</span></div>
+      <div class="feat-cell-desc">${v.desc}</div>
+    </div>`;
+  });
+}
+
+function showTab(name, btn){
+  document.querySelectorAll('.feat-panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('on');
+  btn.classList.add('active');
+}
+
+function showErr(msg){
+  const b=document.getElementById('errBox');
+  b.textContent='⚠ '+msg; b.classList.add('on');
+}
+
+function resetAll(clearPrev=true){
+  clearInterval(stpTimer);
+  document.getElementById('errBox').classList.remove('on');
+  document.getElementById('loaderBox').classList.remove('on');
+  document.getElementById('resultsBox').classList.remove('on');
+  document.getElementById('qualRow').innerHTML='';
+  if(clearPrev){
+    document.getElementById('prevRow').classList.remove('on');
+    document.getElementById('origImg').src='';
+    document.getElementById('resImg').src='';
+    document.getElementById('fi').value='';
+  }
+  ['s1','s2','s3','s4','s5','s6'].forEach((s,i)=>{
+    document.getElementById(s).className=i===0?'stp active':'stp';
+  });
+}
+</script>
+</body>
+</html>
