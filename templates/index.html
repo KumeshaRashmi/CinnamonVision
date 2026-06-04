@@ -164,14 +164,9 @@ footer{position:relative;z-index:1;text-align:center;padding:1.5rem;color:var(--
       <div class="logo-sub">Automated Quality Grading System</div>
     </div>
   </div>
-  <div class="hdr-tag">EE7204 / EC7205 · Univ. of Ruhuna</div>
 </header>
 
 <main>
-  <div class="hero">
-    <h1>Geometric · Color · Texture<br/><em>Analysis in seconds</em></h1>
-    <p>Upload a cinnamon quill image. Our pipeline extracts 33 features across geometry, HSV color, and GLCM+LBP texture — then classifies the grade instantly.</p>
-  </div>
 
   <!-- Upload -->
   <div class="uploader" id="upZone">
@@ -186,11 +181,11 @@ footer{position:relative;z-index:1;text-align:center;padding:1.5rem;color:var(--
   <!-- Image preview -->
   <div class="preview-row" id="prevRow">
     <div class="img-box">
-      <div class="img-box-hd">📷 Uploaded Image</div>
+      <div class="img-box-hd">Uploaded Image</div>
       <img id="origImg" src="" alt="Original"/>
     </div>
     <div class="img-box">
-      <div class="img-box-hd">🔬 Segmentation &amp; Contour</div>
+      <div class="img-box-hd">Segmentation &amp; Contour</div>
       <img id="resImg" src="" alt="Segmented"/>
     </div>
   </div>
@@ -228,7 +223,6 @@ footer{position:relative;z-index:1;text-align:center;padding:1.5rem;color:var(--
     <!-- Confidence + Quality side by side -->
     <div class="sec-card">
       <div class="sec-hd">
-        <div class="sec-hd-icon" style="background:rgba(201,168,76,.15)">📊</div>
         <div class="sec-hd-text">Grade Confidence Scores</div>
       </div>
       <div class="sec-body" id="confBody"></div>
@@ -236,7 +230,6 @@ footer{position:relative;z-index:1;text-align:center;padding:1.5rem;color:var(--
 
     <div class="sec-card">
       <div class="sec-hd">
-        <div class="sec-hd-icon" style="background:rgba(58,138,58,.15)">🎯</div>
         <div class="sec-hd-text">Quality Dimensions</div>
       </div>
       <div class="quality-row" id="qualRow"></div>
@@ -245,13 +238,12 @@ footer{position:relative;z-index:1;text-align:center;padding:1.5rem;color:var(--
     <!-- Feature Analysis — 3 tabs -->
     <div class="sec-card" style="grid-column:1/-1">
       <div class="sec-hd">
-        <div class="sec-hd-icon" style="background:rgba(91,155,213,.15)">🔢</div>
         <div class="sec-hd-text">Extracted Feature Analysis</div>
       </div>
       <div class="feat-tabs">
-        <button class="tab active" onclick="showTab('geo',this)">📐 Geometric (7)</button>
-        <button class="tab" onclick="showTab('col',this)">🎨 Color HSV (6)</button>
-        <button class="tab" onclick="showTab('tex',this)">🔲 Texture GLCM+LBP (6)</button>
+        <button class="tab active" onclick="showTab('geo',this)">Geometric (7)</button>
+        <button class="tab" onclick="showTab('col',this)">Color HSV (6)</button>
+        <button class="tab" onclick="showTab('tex',this)">Texture GLCM+LBP (6)</button>
       </div>
       <div class="feat-panel on" id="tab-geo"></div>
       <div class="feat-panel" id="tab-col"></div>
@@ -261,7 +253,6 @@ footer{position:relative;z-index:1;text-align:center;padding:1.5rem;color:var(--
     <!-- Grade reference -->
     <div class="sec-card" style="grid-column:1/-1">
       <div class="sec-hd">
-        <div class="sec-hd-icon" style="background:rgba(201,168,76,.15)">📋</div>
         <div class="sec-hd-text">SLS 81:2021 Grade Reference</div>
       </div>
       <div class="grade-ref-grid" id="gradeRef">
@@ -296,10 +287,6 @@ footer{position:relative;z-index:1;text-align:center;padding:1.5rem;color:var(--
   </div><!-- /results -->
 </main>
 
-<footer>
-  CinnamonVision · Automated Grading &amp; Quality Estimation using Geometric and Color Texture Analysis ·
-  EE7204/EC7205 · Department of Electrical and Information Engineering · University of Ruhuna · 2026
-</footer>
 
 <script>
 const GC = {Alba:'#5B9BD5',C4:'#3A8A3A',C5:'#D4700A','C5 Special':'#C9A84C'};
