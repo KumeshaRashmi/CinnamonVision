@@ -1,30 +1,3 @@
-"""
-classify.py — CinnamonVision (overfitting-reduced version)
-
-Overfitting fixes applied
-─────────────────────────
-1. Alba oversampling via image augmentation (augment_image_to_features)
-       → Alba has only 173 images vs 334 C5_Special. We generate synthetic
-         extra Alba samples by rotating, flipping, and jittering brightness,
-         which gives the model more diverse Alba examples to learn from.
-
-2. SelectKBest feature selection (top 20 of 33)
-       → Removes the 13 noisiest features before training so the classifier
-         cannot memorise irrelevant patterns.
-
-3. GridSearchCV for SVM (C, gamma) and KNN (k)
-       → Finds regularisation strength by cross-validation instead of guessing.
-         Lower C = stronger SVM regularisation = less overfitting.
-
-4. class_weight='balanced' on SVM
-       → Weights the loss function so Alba mistakes are penalised as much as
-         C5_Special mistakes, preventing the model from ignoring Alba.
-
-5. Held-out 20% test set
-       → Final honest evaluation on data never seen during training or CV.
-         CV-test gap > 5% is reported as an overfitting warning.
-"""
-
 import os
 import numpy as np
 import pandas as pd

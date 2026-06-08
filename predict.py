@@ -1,19 +1,3 @@
-"""
-predict.py — CinnamonVision single-image predictor
-
-Usage:
-    python predict.py path/to/image.jpg
-    python predict.py path/to/image.jpg --model outputs/model.pkl
-
-Outputs JSON to stdout:
-    {
-      "prediction": "Alba",
-      "confidence": 0.97,
-      "probabilities": {"Alba": 0.97, "C4": 0.02, "C5": 0.01},
-      "grade_info": { ... }
-    }
-"""
-
 import sys
 import os
 import json
