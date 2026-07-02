@@ -473,20 +473,36 @@ function loadFile(file) {
 }
 
 // ── Prediction (demo mode — simulates model output from image features) ──
-function runPrediction() {
+
+async function runPrediction() {
   if (!currentFile) return;
   const btn = document.getElementById('predict-btn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Analysing...';
 
-  // Simulate processing delay, then produce a deterministic demo result
-  setTimeout(() => {
-    const result = simulatePrediction(currentFile.name, currentDataURL);
+  try {
+    const formData = new FormData();
+    formData.append("image", currentFile);
+
+    const response = await fetch("http://localhost:5000/predict", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) throw new Error(`Server error: ${response.status}`);
+    const result = await response.json();
+
+    if (result.error) throw new Error(result.error);
+
     showResult(result);
     addToHistory(result, currentDataURL, currentFile.name);
+
+  } catch (err) {
+    alert("Prediction failed: " + err.message);
+  } finally {
     btn.disabled = false;
     btn.innerHTML = 'Classify Grade';
-  }, 1200);
+  }
 }
 
 // Demo predictor — generates plausible probabilities from the filename/image
