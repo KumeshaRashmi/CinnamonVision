@@ -1,14 +1,3 @@
-"""
-evaluate.py — CinnamonVision (overfitting-reduced version)
-
-Changes from original
-─────────────────────
-- CLASS_NAMES fixed to include all 4 classes (was missing C5_Special).
-- Per-class accuracy plot now highlights Alba in red so underfitting is visible.
-- Added Alba recall trend printout after the classification report.
-- confusion_matrix saved with correct 4-class labels.
-"""
-
 import numpy as np
 import pandas as pd
 import matplotlib

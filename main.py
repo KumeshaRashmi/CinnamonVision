@@ -1,18 +1,3 @@
-"""
-main.py — CinnamonVision entry point (overfitting-reduced version)
-
-Run:  python main.py
-
-Outputs saved to outputs/
-  - features.csv
-  - model.pkl
-  - confusion_matrix.png
-  - feature_importance.png
-  - per_class_accuracy.png
-  - alba_analysis.png
-  - sample_predictions.png
-"""
-
 import os
 from classify import train_and_save
 from evaluate import evaluate, visualize_sample_predictions
